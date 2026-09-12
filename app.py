@@ -5,7 +5,7 @@ from datetime import date
 import random
 
 # ---------------------------------------------------------
-# SAYFA YAPILANDIRMASI
+# SAYFA YAPILANDIRMASI & GOOGLE DOĞRULAMA ENJEKSİYONU
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="AutoCheck Hub - AI Ekspertiz & İlan Pazarı",
@@ -13,13 +13,12 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------------------------------------------------
-# GOOGLE SEARCH CONSOLE DOĞRULAMA META ETİKETİ
-# ---------------------------------------------------------
-st.markdown(
-    '<meta name="google-site-verification" content="kpgYSInnO1b5m2qVBtQKoH0uyLWfg7FJPX9-Gsxjk2Y" />',
-    unsafe_allow_html=True
-)
+# Google Search Console Meta Etiketini Kesin Olarak <head> Bölümüne Ekleyen Kod
+st.markdown("""
+    <head>
+        <meta name="google-site-verification" content="kpgYSInnO1b5m2qVBtQKoH0uyLWfg7FJPX9-Gsxjk2Y" />
+    </head>
+""", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # RASTGELE İNTERNET İLANLARI HAVUZU
@@ -165,7 +164,7 @@ else:
 st.sidebar.markdown("---")
 
 # ---------------------------------------------------------
-# ANA SEKMELER (HERKES ÖZGÜRCE GEZEBİLİR)
+# ANA SEKMELER
 # ---------------------------------------------------------
 tab1, tab2, tab3, tab4 = st.tabs([
     "🌐 İLANLAR & PİYASA", 
@@ -261,6 +260,9 @@ with tab3:
                 st.session_state.puan += 150
                 st.success("İlan eklendi!")
                 st.rerun()
+
+with tar4_kontrol := st.tabs(["🤖 BÜTÇEYE GÖRE ARAÇ BUL"])[0] if False else None:
+    pass
 
 with tab4:
     st.subheader("💰 Bütçene Göre Araç / Motor Bulucu")
