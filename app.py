@@ -24,10 +24,14 @@ HAZIR_ILAN_HAVUZU = [
 ]
 
 # ---------------------------------------------------------
-# OTURUM HAFIZASI
+# OTURUM HAFIZASI & KULLANICI VERİTABANI (SIMÜLASYON)
 # ---------------------------------------------------------
 if 'pazar_ilanlari' not in st.session_state:
     st.session_state.pazar_ilanlari = HAZIR_ILAN_HAVUZU.copy()
+if 'kullanicilar' not in st.session_state:
+    st.session_state.kullanicilar = {"admin": "1234"} # Örnek kayıtlı kullanıcı
+if 'giris_yapan' not in st.session_state:
+    st.session_state.giris_yapan = None
 if 'puan' not in st.session_state:
     st.session_state.puan = 250
 if 'analiz_metni_aktar' not in st.session_state:
@@ -98,6 +102,14 @@ st.markdown("""
         padding: 20px;
         margin-top: 15px;
     }
+    .auth-card {
+        background: #1e293b;
+        border: 1px solid #475569;
+        padding: 25px;
+        border-radius: 16px;
+        max-width: 450px;
+        margin: 40px auto;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -112,126 +124,158 @@ if not api_key:
     api_key = st.sidebar.text_input("🔑 Gemini API Key:", type="password")
 
 # ---------------------------------------------------------
-# SEKMELER (LİNKLİ EKSPERTİZ SEKMESİ EKLENDİ)
+# GİRİŞ / KAYIT KONTROLÜ
 # ---------------------------------------------------------
-tab1, tab2, tab3, tab4 = st.tabs([
-    "🌐 İLANLAR & PİYASA", 
-    "🔗 LİNK İLE EKSPERTİZ & ALTERNATİFLER", 
-    "📢 İLAN EKLE", 
-    "🤖 BÜTÇEYE GÖRE ARAÇ BUL"
-])
-
-# ---------------------------------------------------------
-# SEKME 1: İLANLAR & PİYASA
-# ---------------------------------------------------------
-with tab1:
-    st.subheader("🔥 İnternetteki Güncel İlan Akışı")
+if not st.session_state.giris_yapan:
+    st.markdown("---")
+    auth_tab1, auth_tab2 = st.tabs(["🔐 GİRİŞ YAP", "📝 KAYIT OL"])
     
-    col_t1, col_t2 = st.columns([2, 1])
-    with col_t1:
-        st.caption("Kartlardaki 'AI İle Ekspertiz Yap' butonuna basarak doğrudan 2. sekmede analiz başlatabilirsin.")
-    with col_t2:
-        if st.button("🎲 RASTGELE 4 İLAN GETİR", key="btn_rnd"):
-            for item in random.sample(HAZIR_ILAN_HAVUZU, min(2, len(HAZIR_ILAN_HAVUZU))):
-                st.session_state.pazar_ilanlari.insert(0, item)
+    with auth_tab1:
+        st.markdown('<div class="auth-card">', unsafe_allow_html=True)
+        st.subheader("Hesabınıza Giriş Yapın")
+        l_user = st.text_input("Kullanıcı Adı:", key="login_u")
+        l_pass = st.text_input("Şifre:", type="password", key="login_p")
+        if st.button("Giriş Yap", key="btn_login"):
+            if l_user in st.session_state.kullanicilar and st.session_state.kullanicilar[l_user] == l_pass:
+                st.session_state.giris_yapan = l_user
+                st.success(f"Hoş geldin {l_user}!")
+                st.rerun()
+            else:
+                st.error("Kullanıcı adı veya şifre hatalı!")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+    with auth_tab2:
+        st.markdown('<div class="auth-card">', unsafe_allow_html=True)
+        st.subheader("Yeni Hesap Oluştur")
+        r_user = st.text_input("Kullanıcı Adı Seçin:", key="reg_u")
+        r_pass = st.text_input("Şifre Belirleyin:", type="password", key="reg_p")
+        if st.button("Kayıt Ol", key="btn_register"):
+            if r_user and r_pass:
+                if r_user in st.session_state.kullanicilar:
+                    st.warning("Bu kullanıcı adı zaten alınmış.")
+                else:
+                    st.session_state.kullanicilar[r_user] = r_pass
+                    st.session_state.giris_yapan = r_user
+                    st.success("Kayıt başarılı! Otomatik giriş yapıldı.")
+                    st.rerun()
+            else:
+                st.warning("Lütfen alanları boş bırakmayın.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+else:
+    # Kullanıcı giriş yaptıysa görünecek panel üstü bilgi
+    col_u1, col_u2 = st.columns([4, 1])
+    with col_u1:
+        st.info(f"👤 Aktif Kullanıcı: **{st.session_state.giris_yapan}** | Puanın: **{st.session_state.puan} XP**")
+    with col_u2:
+        if st.button("🚪 Çıkış Yap"):
+            st.session_state.giris_yapan = None
             st.rerun()
 
-    st.markdown("---")
-    
-    # Sayfalama
-    ILAN_PER_PAGE = 4
-    toplam = len(st.session_state.pazar_ilanlari)
-    top_sayfa = (toplam + ILAN_PER_PAGE - 1) // ILAN_PER_PAGE
-    sayfa = st.number_input("Sayfa:", min_value=1, max_value=max(1, top_sayfa), value=1, step=1)
-    
-    start = (sayfa - 1) * ILAN_PER_PAGE
-    current_list = st.session_state.pazar_ilanlari[start:start+ILAN_PER_PAGE]
+    # ---------------------------------------------------------
+    # ANA SEKMELER (GİRİŞ YAPILDIKTAN SONRA)
+    # ---------------------------------------------------------
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "🌐 İLANLAR & PİYASA", 
+        "🔗 LİNK İLE EKSPERTİZ & ALTERNATİFLER", 
+        "📢 İLAN EKLE", 
+        "🤖 BÜTÇEYE GÖRE ARAÇ BUL"
+    ])
 
-    cols = st.columns(2)
-    for idx, item in enumerate(current_list):
-        with cols[idx % 2]:
-            st.markdown(f"""
-            <div class="mini-ad-box">
-                <span class="source-badge">{item.get('kaynak', 'İlan')}</span>
-                <span style="float:right;" class="price-text">{item['fiyat']}</span>
-                <h4 style="margin: 10px 0 6px 0; font-size:1.05rem;">{item['baslik']}</h4>
-                <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:6px;">📍 {item['sehir']} | 📐 {item['km']}</p>
-                <p style="color:#cbd5e1; font-size:0.8rem;">{item['detay']}</p>
-                <a href="{item.get('link', '#')}" target="_blank" class="go-btn">🔗 Orijinal Siteye Git</a>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            if st.button(f"⚡ AI İle Ekspertiz Yap", key=f"b_ai_{start+idx}"):
-                st.session_state.analiz_link_aktar = item.get('link', '')
-                st.session_state.analiz_metni_aktar = f"Araç: {item['baslik']} | Fiyat: {item['fiyat']} | KM: {item['km']} | Detay: {item['detay']}"
-                st.toast("2. Sekmeye (Link ile Ekspertiz) aktarıldı!", icon="🚀")
+    with tab1:
+        st.subheader("🔥 İnternetteki Güncel İlan Akışı")
+        col_t1, col_t2 = st.columns([2, 1])
+        with col_t1:
+            st.caption("Kartlardaki butonlarla hızlı ekspertiz sayfasına geçiş yapabilirsin.")
+        with col_t2:
+            if st.button("🎲 RASTGELE 4 İLAN GETİR", key="btn_rnd"):
+                for item in random.sample(HAZIR_ILAN_HAVUZU, min(2, len(HAZIR_ILAN_HAVUZU))):
+                    st.session_state.pazar_ilanlari.insert(0, item)
+                st.rerun()
 
-# ---------------------------------------------------------
-# SEKME 2: LİNKLİ EKSPERTİZ VE ALTERNATİFLER (GÜNCELLENDİ)
-# ---------------------------------------------------------
-with tab2:
-    st.subheader("🔗 Link ile Araç Ekspertizi & Akıllı Alternatifler")
-    st.caption("İlan linkini yapıştır, yapay zekâ ekspertiz yapsın ve sana **3 daha iyi alternatif araç/motor** önersin.")
-    
-    link_input = st.text_input("🔗 İlan Linki (URL):", value=st.session_state.analiz_link_aktar, placeholder="https://www.sahibinden.com/ilan/...")
-    text_input = st.text_area("✍️ İlan Açıklaması / Notlar:", value=st.session_state.analiz_metni_aktar, height=100)
-    
-    if st.button("🚀 EKSPERTİZİ BAŞLAT VE ALTERNATİFLERİ GETİR", key="btn_deep_analysis"):
-        if not api_key:
-            st.error("API Key tanımlı değil.")
-        elif not link_input and not text_input:
-            st.warning("Lütfen bir link veya ilan açıklaması girin.")
-        else:
-            with st.spinner("🔍 Yapay zekâ aracı inceliyor ve alternatifleri hazırlıyor..."):
-                try:
+        st.markdown("---")
+        
+        ILAN_PER_PAGE = 4
+        toplam = len(st.session_state.pazar_ilanlari)
+        top_sayfa = (toplam + ILAN_PER_PAGE - 1) // ILAN_PER_PAGE
+        sayfa = st.number_input("Sayfa:", min_value=1, max_value=max(1, top_sayfa), value=1, step=1)
+        
+        start = (sayfa - 1) * ILAN_PER_PAGE
+        current_list = st.session_state.pazar_ilanlari[start:start+ILAN_PER_PAGE]
+
+        cols = st.columns(2)
+        for idx, item in enumerate(current_list):
+            with cols[idx % 2]:
+                st.markdown(f"""
+                <div class="mini-ad-box">
+                    <span class="source-badge">{item.get('kaynak', 'İlan')}</span>
+                    <span style="float:right;" class="price-text">{item['fiyat']}</span>
+                    <h4 style="margin: 10px 0 6px 0; font-size:1.05rem;">{item['baslik']}</h4>
+                    <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:6px;">📍 {item['sehir']} | 📐 {item['km']}</p>
+                    <p style="color:#cbd5e1; font-size:0.8rem;">{item['detay']}</p>
+                    <a href="{item.get('link', '#')}" target="_blank" class="go-btn">🔗 Orijinal Siteye Git</a>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                if st.button(f"⚡ AI İle Ekspertiz Yap", key=f"b_ai_{start+idx}"):
+                    st.session_state.analiz_link_aktar = item.get('link', '')
+                    st.session_state.analiz_metni_aktar = f"Araç: {item['baslik']} | Fiyat: {item['fiyat']} | KM: {item['km']} | Detay: {item['detay']}"
+                    st.toast("2. Sekmeye aktarıldı!", icon="🚀")
+
+    with tab2:
+        st.subheader("🔗 Link ile Araç Ekspertizi & Akıllı Alternatifler")
+        link_input = st.text_input("🔗 İlan Linki (URL):", value=st.session_state.analiz_link_aktar, placeholder="https://...")
+        text_input = st.text_area("✍️ İlan Açıklaması / Notlar:", value=st.session_state.analiz_metni_aktar, height=100)
+        
+        if st.button("🚀 EKSPERTİZİ BAŞLAT VE ALTERNATİFLERİ GETİR", key="btn_deep_analysis"):
+            if not api_key:
+                st.error("API Key tanımlı değil.")
+            elif not link_input and not text_input:
+                st.warning("Lütfen bir link veya ilan açıklaması girin.")
+            else:
+                with st.spinner("🔍 Yapay zekâ inceliyor ve alternatifleri hazırlıyor..."):
+                    try:
+                        client = genai.Client(api_key=api_key)
+                        prompt = f"""
+                        Oto ekspertiz ve pazar analiz uzmanı olarak şu ilanı incele:
+                        - **Link:** {link_input}
+                        - **Detaylar:** {text_input}
+
+                        Şu başlıklar altında rapor sun:
+                        1. **Ekspertiz Puanı & Durumu:** (10 üzerinden puan, riskler)
+                        2. **Kronik Arızalar:** Motor/şanzıman problemleri.
+                        3. **🎯 Akıllı Alternatifler:** Bu bütçede alınabilecek **tam 3 FARKLI alternatif araç/motor önerisi**.
+                        """
+                        res = client.models.generate_content(model='gemini-3.6-flash', contents=[prompt])
+                        st.markdown('<div class="report-box">', unsafe_allow_html=True)
+                        st.markdown(res.text)
+                        st.markdown('</div>', unsafe_allow_html=True)
+                    except Exception as e:
+                        st.error(f"Hata oluştu: {e}")
+
+    with tab3:
+        st.subheader("📢 Pazara İlan Ekle")
+        b_in = st.text_input("Başlık:", placeholder="Örn: 2018 Egea", key="i_b")
+        f_in = st.text_input("Fiyat:", placeholder="550.000 TL", key="i_f")
+        l_in = st.text_input("Link:", placeholder="https://...", key="i_l")
+        d_in = st.text_area("Açıklama:", key="i_d")
+        
+        if st.button("📌 İLANI YAYINLA (+150 XP)", key="i_btn"):
+            if b_in and f_in:
+                st.session_state.pazar_ilanlari.insert(0, {"baslik": b_in, "fiyat": f_in, "km": "100.000 KM", "sehir": "Türkiye", "kaynak": st.session_state.giris_yapan, "link": l_in or "#", "detay": d_in})
+                st.session_state.puan += 150
+                st.success("İlan eklendi!")
+                st.rerun()
+
+    with tab4:
+        st.subheader("💰 Bütçene Göre Araç / Motor Bulucu")
+        butce = st.number_input("Bütçe (TL):", value=600000, step=25000)
+        notlar = st.text_input("Özel İstek:")
+        if st.button("🔍 LİSTELE", key="b_list"):
+            if api_key:
+                with st.spinner("Aranıyor..."):
                     client = genai.Client(api_key=api_key)
-                    prompt = f"""
-                    Sen profesyonel bir oto ekspertiz ve pazar analiz uzmanısın. 
-                    Şu ilanı/bilgileri incele:
-                    - **Link:** {link_input}
-                    - **Detaylar:** {text_input}
-
-                    Lütfen şu başlıklar altında detaylı rapor sun:
-                    1. **Ekspertiz Puanı & Durumu:** (10 üzerinden puan, olası boya/değişen/tramer riskleri)
-                    2. **Kronik Arızalar:** Bu modelin kronik motor veya şanzıman problemleri nelerdir?
-                    3. **🎯 Akıllı Alternatifler:** Bu bütçede (veya aynı fiyata) alıcı için çok daha mantıklı olabilecek **tam 3 FARKLI alternatif araç veya motor önerisi** sun ve nedenlerini kısaca açıkla.
-                    """
-                    res = client.models.generate_content(model='gemini-3.6-flash', contents=[prompt])
+                    res = client.models.generate_content(model='gemini-3.6-flash', contents=[f"Bütçe: {butce} TL, İstek: {notlar}. Tam 5 alternatif araç/motor öner."])
                     st.markdown('<div class="report-box">', unsafe_allow_html=True)
                     st.markdown(res.text)
                     st.markdown('</div>', unsafe_allow_html=True)
-                except Exception as e:
-                    st.error(f"Hata oluştu: {e}")
-
-# ---------------------------------------------------------
-# SEKME 3: İLAN EKLE
-# ---------------------------------------------------------
-with tab3:
-    st.subheader("📢 Pazara İlan Ekle")
-    b_in = st.text_input("Başlık:", placeholder="Örn: 2018 Egea")
-    f_in = st.text_input("Fiyat:", placeholder="550.000 TL")
-    l_in = st.text_input("Link:", placeholder="https://...")
-    d_in = st.text_area("Açıklama:")
-    
-    if st.button("📌 İLANI YAYINLA (+150 XP)"):
-        if b_in and f_in:
-            st.session_state.pazar_ilanlari.insert(0, {"baslik": b_in, "fiyat": f_in, "km": "100.000 KM", "sehir": "Türkiye", "kaynak": "Kullanıcı", "link": l_in or "#", "detay": d_in})
-            st.session_state.puan += 150
-            st.success("İlan eklendi!")
-            st.rerun()
-
-# ---------------------------------------------------------
-# SEKME 4: BÜTÇEYe GÖRE ARAÇ BUL
-# ---------------------------------------------------------
-with tab4:
-    st.subheader("💰 Bütçene Göre Araç / Motor Bulucu")
-    butce = st.number_input("Bütçe (TL):", value=600000, step=25000)
-    notlar = st.text_input("Özel İstek (Örn: BMW olsun, az yaksın):")
-    if st.button("🔍 LİSTELE"):
-        if api_key:
-            with st.spinner("Aranıyor..."):
-                client = genai.Client(api_key=api_key)
-                res = client.models.generate_content(model='gemini-3.6-flash', contents=[f"Bütçe: {butce} TL, İstek: {notlar}. Tam 5 alternatif araç/motor öner."])
-                st.markdown('<div class="report-box">', unsafe_allow_html=True)
-                st.markdown(res.text)
-                st.markdown('</div>', unsafe_allow_html=True)
