@@ -24,21 +24,33 @@ if 'puan' not in st.session_state:
     st.session_state.puan = 250
 if 'son_odul_tarihi' not in st.session_state:
     st.session_state.son_odul_tarihi = None
+
+# Hata Veren Aktarım Değişkeni (Widget Key Çakışmasını Önler)
+if 'analiz_metni_aktar' not in st.session_state:
+    st.session_state.analiz_metni_aktar = ""
+
 if 'pazar_ilanlari' not in st.session_state:
-    # Örnek Başlangıç İlanı
     st.session_state.pazar_ilanlari = [
         {
             "baslik": "2018 Renault Megane 1.5 dCi Touch",
             "fiyat": "850.000 TL",
             "km": "110.000",
             "sehir": "İstanbul / Kadıköy",
-            "detay": "Hatasız boyasız, bakımları yetkili serviste yapılmıştır.",
+            "detay": "Hatasız boyasız, bakımları yetkili serviste yapılmıştır. Takas düşünmüyorum.",
+            "img": None
+        },
+        {
+            "baslik": "2021 Honda PCX 125 Scooter",
+            "fiyat": "125.000 TL",
+            "km": "12.500",
+            "sehir": "Hatay / İskenderun",
+            "detay": "Düşmesi kalkması yok. Çanta ve konfor sele eklentili.",
             "img": None
         }
     ]
 
 # ---------------------------------------------------------
-# SİBER GARAJ CSS & GELİŞMİŞ GÖRSEL EFEKTLER
+# SAHİBİNDEN / LETGO TARZI NEON PAZAR YERİ CSS
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -73,21 +85,42 @@ st.markdown("""
         text-align: center;
         box-shadow: 0 0 15px rgba(129, 140, 248, 0.3);
     }
-    .market-card {
-        background: rgba(30, 41, 59, 0.8);
-        border: 1px solid #38bdf8;
-        border-radius: 14px;
+    
+    /* LETGO / SAHİBİNDEN İLAN KARTI STİLİ */
+    .ad-card {
+        background: rgba(30, 41, 59, 0.85);
+        border: 1px solid #334155;
+        border-radius: 16px;
         padding: 18px;
         margin-bottom: 15px;
-        box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
-    .vote-box {
-        background: linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%);
-        border: 2px solid #6366f1;
-        border-radius: 18px;
-        padding: 22px;
-        text-align: center;
+    .ad-card:hover {
+        border-color: #38bdf8;
+        transform: translateY(-3px);
+        box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
     }
+    .price-badge {
+        background: linear-gradient(90deg, #16a34a 0%, #22c55e 100%);
+        color: white;
+        padding: 6px 14px;
+        font-weight: 900;
+        font-size: 1.1rem;
+        border-radius: 8px;
+        display: inline-block;
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+    }
+    .tag-badge {
+        background: #1e293b;
+        color: #94a3b8;
+        border: 1px solid #475569;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        margin-right: 5px;
+    }
+
     .report-box {
         background: rgba(15, 23, 42, 0.95);
         border: 2px solid #38bdf8;
@@ -147,9 +180,7 @@ api_key = st.secrets.get("GEMINI_API_KEY", "")
 if not api_key:
     api_key = st.sidebar.text_input("🔑 Gemini API Key:", type="password")
 
-# ---------------------------------------------------------
 # YAN PANEL (SIDEBAR) GARAJ BİLGİSİ
-# ---------------------------------------------------------
 with st.sidebar:
     st.markdown("### 🚘 SANAL GARAJIM")
     if not st.session_state.garaj:
@@ -163,29 +194,36 @@ with st.sidebar:
             </div>
             """, unsafe_allow_html=True)
     st.markdown("---")
-    st.caption("AutoCheck Engine v5.0 Marketplace")
+    st.caption("AutoCheck Engine v5.1 Marketplace")
 
 # ---------------------------------------------------------
 # 7 ANA SEKMELİ YAPILANDIRMA
 # ---------------------------------------------------------
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "🔍 TEK ARAÇ ANALİZİ", 
-    "⚔️ İKİ ARAÇ KIYASLAMA", 
-    "🛍️ SATILIK İLANLAR", 
+    "🛍️ SATILIK İLANLAR PAZARI", 
     "📢 İLAN VER", 
+    "⚔️ İKİ ARAÇ KIYASLAMA", 
     "🗳️ SOSYAL OYLAMA", 
     "🚗 SANAL GARAJ", 
     "💰 ARAÇ/MOTOR BUL"
 ])
 
 # ---------------------------------------------------------
-# SEKME 1: TEK ARAÇ ANALİZİ
+# SEKME 1: TEK ARAÇ ANALİZİ (ÇAKIŞMA OLMADAN ÇALIŞIR)
 # ---------------------------------------------------------
 with tab1:
     col_input1, col_input2 = st.columns(2)
     with col_input1:
         link_single = st.text_input("🔗 İlan Linki:", key="link_s")
-        text_single = st.text_area("✍️ İlan Metni / Notlar:", height=130, key="text_s", placeholder="Örn: 2012 VW Crafter 2.0 TDI, 220.000 km, sol çamurluk boyalı...")
+        # Pazar yerinden aktarılan veri varsa varsayılan olarak o gelir
+        text_single = st.text_area(
+            "✍️ İlan Metni / Notlar:", 
+            value=st.session_state.analiz_metni_aktar, 
+            height=130, 
+            key="text_s", 
+            placeholder="Örn: 2012 VW Crafter 2.0 TDI, 220.000 km, sol çamurluk boyalı..."
+        )
     with col_input2:
         up_single = st.file_uploader("📷 Araç Fotoğrafı Yükle:", type=["jpg", "jpeg", "png"], key="up_s")
         img_single = Image.open(up_single) if up_single else None
@@ -216,58 +254,53 @@ with tab1:
                     st.error(f"Hata oluştu: {e}")
 
 # ---------------------------------------------------------
-# SEKME 2: İKİ ARAÇ KIYASLAMA
+# SEKME 2: SATILIK İLANLAR PAZARI (SAHİBİNDEN / LETGO TARZI)
 # ---------------------------------------------------------
 with tab2:
-    colA, colB = st.columns(2)
-    with colA:
-        st.markdown("### 🚘 1. Araç (Araç A)")
-        link_A = st.text_input("1. Araç Linki:", key="link_A")
-        text_A = st.text_area("1. Araç Bilgileri:", height=100, key="text_A")
-    with colB:
-        st.markdown("### 🚘 2. Araç (Araç B)")
-        link_B = st.text_input("2. Araç Linki:", key="link_B")
-        text_B = st.text_area("2. Araç Bilgileri:", height=100, key="text_B")
+    st.subheader("🛍️ İkinci El Otomobil & Motosiklet Pazarı")
+    st.caption("Kullanıcıların eklediği ilanları doğrudan inceleyin veya yapay zekâya analiz ettirin.")
     
-    if st.button("⚔️ İKİ ARACI KIYASLA VE KAZANANI SEÇ", key="btn_c"):
-        if api_key and (text_A or text_B or link_A or link_B):
-            client = genai.Client(api_key=api_key)
-            res_c = client.models.generate_content(model='gemini-3.6-flash', contents=[f"Şu iki aracı kıyasla ve kazananı seç:\nAraç A: {link_A} {text_A}\nAraç B: {link_B} {text_B}"])
-            st.markdown('<div class="report-box">', unsafe_allow_html=True)
-            st.markdown(res_c.text)
+    if not st.session_state.pazar_ilanlari:
+        st.info("Henüz pazarda ilan yok. 'İlan Ver' sekmesinden ilk ilanı sen yayınla!")
+    else:
+        for idx, item in enumerate(st.session_state.pazar_ilanlari):
+            st.markdown('<div class="ad-card">', unsafe_allow_html=True)
+            col_i1, col_i2, col_i3 = st.columns([1.2, 2.5, 1])
+            
+            with col_i1:
+                if item["img"]:
+                    st.image(item["img"], use_container_width=True)
+                else:
+                    st.markdown("""
+                    <div style="background:#0f172a; height:120px; border-radius:10px; display:flex; align-items:center; justify-content:center; border:1px dashed #334155;">
+                        <span style="color:#64748b;">📷 Fotoğraf Yok</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            with col_i2:
+                st.markdown(f"#### {item['baslik']}")
+                st.markdown(f"""
+                <span class="tag-badge">📐 {item['km']} KM</span>
+                <span class="tag-badge">📍 {item['sehir']}</span>
+                """, unsafe_allow_html=True)
+                st.markdown(f"<p style='color:#cbd5e1; margin-top:8px; font-size:0.9rem;'>{item['detay']}</p>", unsafe_allow_html=True)
+            
+            with col_i3:
+                st.markdown(f'<div class="price-badge">{item["fiyat"]}</div>', unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # Güvenli Aktarım Butonu (Hata Verme İhtimali Yoktur)
+                if st.button(f"🤖 AI İle Analiz Et", key=f"btn_pazar_{idx}"):
+                    st.session_state.analiz_metni_aktar = f"Araç: {item['baslik']} | Fiyat: {item['fiyat']} | KM: {item['km']} | Lokasyon: {item['sehir']} | Açıklama: {item['detay']}"
+                    st.toast("İlan bilgisi 1. Sekmeye yüklendi! Lütfen 'Tek Araç Analizi' sekmesine geçin.", icon="✅")
+            
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# SEKME 3: SATILIK İLANLAR PAZARI
+# SEKME 3: İLAN VERME MODÜLÜ
 # ---------------------------------------------------------
 with tab3:
-    st.subheader("🛍️ Kullanıcılardan Satılık Araç & Motosiklet İlanları")
-    
-    if not st.session_state.pazar_ilanlari:
-        st.info("Henüz pazarda ilan yok. İlk ilanı sen ver!")
-    else:
-        for idx, item in enumerate(st.session_state.pazar_ilanlari):
-            with st.container():
-                col_i1, col_i2 = st.columns([1, 2])
-                with col_i1:
-                    if item["img"]:
-                        st.image(item["img"], use_container_width=True)
-                    else:
-                        st.markdown("📷 *Fotoğraf Yok*")
-                with col_i2:
-                    st.markdown(f"### {item['baslik']}")
-                    st.markdown(f"💰 **Fiyat:** `{item['fiyat']}` | 📐 **KM:** `{item['km']}` | 📍 **Konum:** `{item['sehir']}`")
-                    st.write(f"📝 **Açıklama:** {item['detay']}")
-                    
-                    if st.button(f"🔍 Yapay Zekâ İle Bu İlanı Analiz Et", key=f"btn_pazar_{idx}"):
-                        st.session_state["text_s"] = f"{item['baslik']} - {item['fiyat']} - {item['km']} KM - {item['detay']}"
-                        st.toast("İlan bilgileri 'Tek Araç Analizi' sekmesine aktarıldı! En üstteki 1. Sekmeye geçebilirsiniz.")
-
-# ---------------------------------------------------------
-# SEKME 4: İLAN VERME MODÜLÜ
-# ---------------------------------------------------------
-with tab4:
-    st.subheader("📢 Aracını Ücretsiz İlana Koy")
+    st.subheader("📢 Aracını İlana Koy ve Hemen Sat")
     
     col_p1, col_p2 = st.columns(2)
     with col_p1:
@@ -290,12 +323,34 @@ with tab4:
                 "detay": p_detay,
                 "img": uploaded_img
             }
-            st.session_state.pazar_ilanlari.append(yeni_ilan)
+            st.session_state.pazar_ilanlari.insert(0, yeni_ilan) # Yeni ilanı en üste ekler
             st.session_state.puan += 150
-            st.success("İlanınız başarıyla eklendi! 150 XP Kazandınız.")
+            st.success("İlanınız başarıyla eklendi! Pazarda en üstte yayınlandı (+150 XP).")
             st.rerun()
         else:
             st.warning("Lütfen en az Başlık ve Fiyat kısımlarını doldurun.")
+
+# ---------------------------------------------------------
+# SEKME 4: İKİ ARAÇ KIYASLAMA
+# ---------------------------------------------------------
+with tab4:
+    colA, colB = st.columns(2)
+    with colA:
+        st.markdown("### 🚘 1. Araç (Araç A)")
+        link_A = st.text_input("1. Araç Linki:", key="link_A")
+        text_A = st.text_area("1. Araç Bilgileri:", height=100, key="text_A")
+    with colB:
+        st.markdown("### 🚘 2. Araç (Araç B)")
+        link_B = st.text_input("2. Araç Linki:", key="link_B")
+        text_B = st.text_area("2. Araç Bilgileri:", height=100, key="text_B")
+    
+    if st.button("⚔️ İKİ ARACI KIYASLA VE KAZANANI SEÇ", key="btn_c"):
+        if api_key and (text_A or text_B or link_A or link_B):
+            client = genai.Client(api_key=api_key)
+            res_c = client.models.generate_content(model='gemini-3.6-flash', contents=[f"Şu iki aracı kıyasla ve kazananı seç:\nAraç A: {link_A} {text_A}\nAraç B: {link_B} {text_B}"])
+            st.markdown('<div class="report-box">', unsafe_allow_html=True)
+            st.markdown(res_c.text)
+            st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # SEKME 5: SOSYAL OYLAMA MODÜLÜ
@@ -303,7 +358,7 @@ with tab4:
 with tab5:
     st.subheader("🔥 Günün İlanı: Bu Araç Alınır mı?")
     st.markdown("""
-    <div class="vote-box">
+    <div style="background:#0f172a; border:2px solid #6366f1; border-radius:18px; padding:22px; text-align:center;">
         <h3>🚘 2012 Volkswagen Crafter 2.0 TDI (220.000 km)</h3>
         <p><i>"Motor sıfır yapıldı deniyor, sol çamurluk lokal boyalı. Fiyat piyasanın %10 altında."</i></p>
     </div>
