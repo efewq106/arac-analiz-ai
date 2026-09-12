@@ -14,6 +14,14 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------
+# GOOGLE SEARCH CONSOLE DOĞRULAMA META ETİKETİ
+# ---------------------------------------------------------
+st.markdown(
+    '<meta name="google-site-verification" content="kpgYSInnO1b5m2qVBtQKoH0uyLWfg7FJPX9-Gsxjk2Y" />',
+    unsafe_allow_html=True
+)
+
+# ---------------------------------------------------------
 # RASTGELE İNTERNET İLANLARI HAVUZU
 # ---------------------------------------------------------
 HAZIR_ILAN_HAVUZU = [
