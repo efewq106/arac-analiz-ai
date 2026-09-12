@@ -5,7 +5,7 @@ from datetime import date
 import random
 
 # ---------------------------------------------------------
-# SAYFA YAPILANDIRMASI & GOOGLE DOĞRULAMA ENJEKSİYONU
+# SAYFA YAPILANDIRMASI & GOOGLE ANALYTICS DOĞRULAMASI
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="AutoCheck Hub - AI Ekspertiz & İlan Pazarı",
@@ -13,11 +13,15 @@ st.set_page_config(
     layout="wide"
 )
 
-# Google Search Console Meta Etiketini Kesin Olarak <head> Bölümüne Ekleyen Kod
+# Google Analytics İzleme Kodu (Search Console Doğrulaması İçin)
 st.markdown("""
-    <head>
-        <meta name="google-site-verification" content="kpgYSInnO1b5m2qVBtQKoH0uyLWfg7FJPX9-Gsxjk2Y" />
-    </head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GXT6FRSQ7C"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-GXT6FRSQ7C');
+    </script>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
