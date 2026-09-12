@@ -6,64 +6,74 @@ from bs4 import BeautifulSoup
 
 # Sayfa Yapılandırması
 st.set_page_config(
-    page_title="AutoCheck AI - Akıllı Araç & İlan Analizi",
-    page_icon="🚘",
+    page_title="AutoCheck AI Pro - Araç Ekspertiz & İlan Analiz",
+    page_icon="🚗",
     layout="centered"
 )
 
-# Özel CSS Tasarımı (Görsel İyileştirmeler)
+# Özel CSS Tasarımı (Profesyonel Garaj / Ekspertiz Teması)
 st.markdown("""
 <style>
-    /* Ana Başlık Tasarımı */
-    .main-header {
-        font-size: 2.2rem;
-        font-weight: 800;
-        color: #1E3A8A;
+    /* Ana Başlık */
+    .main-title {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: #0F172A;
         text-align: center;
-        margin-bottom: 0px;
+        letter-spacing: -1px;
     }
-    .sub-header {
-        font-size: 1rem;
-        color: #4B5563;
+    .sub-title {
+        font-size: 1.1rem;
+        color: #475569;
         text-align: center;
-        margin-bottom: 25px;
-    }
-    /* Bilgi Kartı */
-    .info-card {
-        background-color: #F3F4F6;
-        border-left: 5px solid #2563EB;
-        padding: 15px;
-        border-radius: 8px;
         margin-bottom: 20px;
     }
-    /* Analiz Kutusu Stili */
+    /* Kart Yapıları */
+    .feature-card {
+        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    .badge {
+        background-color: #3B82F6;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    /* Buton Tasarımı */
     .stButton>button {
         width: 100%;
-        background-color: #2563EB;
+        background: linear-gradient(90deg, #2563EB 0%, #1D4ED8 100%);
         color: white;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         font-weight: bold;
-        padding: 12px;
-        border-radius: 10px;
+        padding: 14px;
+        border-radius: 12px;
         border: none;
-        transition: 0.3s;
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        transition: all 0.3s ease;
     }
     .stButton>button:hover {
-        background-color: #1D4ED8;
-        border-none;
+        transform: translateY(-2px);
+        box-shadow: 0 15px 20px -3px rgba(37, 99, 235, 0.4);
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Başlık Bölümü
-st.markdown('<div class="main-header">🚘 AutoCheck AI</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Yapay Zekâ Destekli İkinci El Araç & Ekspertiz Danışmanı</div>', unsafe_allow_html=True)
+# Üst Başlık & Banner
+st.markdown('<div class="main-title">🚘 AutoCheck AI <span class="badge">PRO</span></div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">Yapay Zekâ Destekli 360° Oto Ekspertiz & İlan Analiz Platformu</div>', unsafe_allow_html=True)
 
-# Bilgi Kartı
+# Hoş Geldin / Bilgi Kartı
 st.markdown("""
-<div class="info-card">
-    <b>💡 Nasıl Kullanılır?</b><br>
-    İlan linkini yapıştırın, araç ekran görüntüsünü yükleyin veya araç bilgilerini yazın. Yapay zeka kronik sorunları, avantajları ve ekspertiz tavsiyelerini anında çıkarsın.
+<div class="feature-card">
+    <h3 style="margin-top:0; color:#60A5FA;">🔍 Akıllı Teşhis Nasıl Çalışır?</h3>
+    <p style="margin-bottom:5px;">İlan linkini yapıştırın veya araç/ilan fotoğrafını yükleyin. Sistemimiz aracı mekanik, kronik arıza, piyasa likiditesi ve ekspertiz riskleri açısından derinlemesine tarar.</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -72,19 +82,20 @@ api_key = st.secrets.get("GEMINI_API_KEY", "")
 if not api_key:
     api_key = st.sidebar.text_input("🔑 Gemini API Key (Yönetici Girişi):", type="password")
 
-# Giriş Alanları (Tab Yapısı)
-tab1, tab2 = st.tabs(["🔗 İlan Linki / Metin Girişi", "📷 Fotoğraf / Ekran Görüntüsü"])
+# Sekmeli Giriş Alanı
+tab1, tab2 = st.tabs(["🔗 İlan Linki / Detaylı Metin", "📷 Araç Fotoğrafı / İlan Ekran Görüntüsü"])
 
 with tab1:
-    ilan_linki = st.text_input("🔗 İlan Linki Yapıştırın (Sahibinden, Letgo vb.):")
-    ilan_metni = st.text_area("✍️ Veya Araç Detaylarını / İlan Metnini Yazın:", height=100, placeholder="Örn: 2012 Volkswagen Crafter 2.0 TDI 220.000 km...")
+    ilan_linki = st.text_input("🔗 İlan Linki Yapıştırın (Sahibinden, Letgo, Arabam vb.):")
+    ilan_metni = st.text_area("✍️ Veya Araç Detaylarını / İlan Açıklamasını Yazın:", height=120, placeholder="Örn: 2012 Volkswagen Crafter 2.0 TDI 220.000 km, motor durumu %85, ekspertizde duman atma yok...")
 
 with tab2:
-    uploaded_file = st.file_uploader("📷 Araç Fotoğrafı veya İlan Ekran Görüntüsü Yükleyin", type=["jpg", "jpeg", "png"])
+    uploaded_file = st.file_uploader("📷 Araç Görseli veya İlan Ekran Görüntüsü Yükleyin", type=["jpg", "jpeg", "png"])
     image = None
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
-        st.image(image, caption="🚘 Yüklenen Araç / İlan Görseli", use_container_width=True)
+        st.image(image, caption="📸 Analiz Edilecek Araç / İlan Görseli", use_container_width=True)
+        st.info("💡 Görsel algılandı: Motor, araç kasası, kadran veya ilan metni taranacak.")
 
 def linkten_veri_cek(url):
     try:
@@ -93,41 +104,56 @@ def linkten_veri_cek(url):
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             title = soup.title.string if soup.title else ""
-            return f"İlan Bağlantı İçeriği: {title}"
+            return f"İlan Bağlantı Verisi: {title}"
     except Exception:
         pass
     return f"Girilen İlan Linki: {url}"
 
 SYSTEM_PROMPT = """
-Sen uzman bir otomotiv mekanikeri, araç ekspertiz uzmanı ve ikinci el piyasa danışmanısın.
-Sana verilen araç verilerini analiz et ve aşağıdaki yapıda, bol emojili, profesyonel bir rapor sun:
+Sen usta bir otomotiv mekanikeri, kıdemli ekspertiz uzmanı ve ikinci el araç piyasa danışmanısın.
+Sana verilen verileri (görsel, link, metin) en ince detayına kadar incele ve kullanıcıyı hayran bırakacak profesyonellikte bir rapor sun.
 
-### 📊 Araç Analiz Raporu
+Lütfen yanıtını aynen şu şablonda ve zengin Markdown formatında hazırla:
 
-#### 1. ⚠️ Kronik Arızalar & Mekanik Riskler
-* (Motor, şanzıman, turbo, enjektör veya elektronik aksam riskleri)
+---
+## 📋 ARAÇ VE İLAN ÖZETİ
+* **Tespit Edilen Model:** (Marka / Model / Motor / Yıl)
+* **Genel Değerlendirme Puanı:** 🌟 (10 üzerinden puan ver)
 
-#### 2. 🟢 Öne Çıkan Avantajlar
-* (Yakıt tüketimi, piyasa likiditesi, yedek parça bulunabilirliği, konfor)
+---
+## ⚙️ 1. MEKANİK & KRONİK ARIZA ANALİZİ
+* **Motor & Turbo Riskleri:** (Enjektör, turbo, DPF, Duman atma, yağ yakma durumları)
+* **Şanzıman & Aktarma:** (Manuel/Otomatik kronik arızalar, kavrama/mechatronic riskleri)
+* **Elektronik & Süspansiyon:** (CAN-Bus, kronik sensör ve alt takım arızaları)
 
-#### 3. 🔴 Dezavantajlar & İşletme Maliyeti
-* (Sürüş hissi, kronik yıpranmalar, vergi veya bakım giderleri)
+---
+## 🟢 2. ÖNE ÇIKAN AVANTAJLAR (Neden Alınır?)
+* **Piyasa & Likidite:** (İkinci el satılabilirlik hızı)
+* **Maliyet:** (Yakıt tüketimi ve yedek parça erişim kolaylığı)
 
-#### 4. 🛠️ Ekspertiz Kontrol Listesi
-* (Ustaya veya ekspertize gidildiğinde özellikle bakılması gereken 3-4 kritik nokta)
+---
+## 🔴 3. DEZAVANTAJLAR & İŞLETME GİDERLERİ
+* (Sürüş konforu eksileri, yüksek km riskleri, ağır bakım maliyetleri)
 
-Yanıtı anlaşılır, net ve Türkçe ver.
+---
+## 🛠️ 4. EKSPERTİZDE ÖZELLİKLE BAKILMASI GEREKENLER (Kritik Noktalar)
+1. 🔍 **Nokta 1:** (Örn: Soğutma suyu haznesinde yağ/kopuk var mı?)
+2. 🔍 **Nokta 2:** (Örn: Şanzıman geçişlerinde vuruntu ve soğukta kararsızlık)
+3. 🔍 **Nokta 3:** (Örn: Şase, podye ve direklerde düzeltme/kaynak izi)
+
+---
+💡 **Usta Tavsiyesi:** (Son karar cümlesi)
 """
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-if st.button("🚀 Aracı Detaylı Analiz Et"):
+if st.button("🚀 360° DETAYLI ANALİZİ BAŞLAT"):
     if not api_key:
-        st.error("Sistem API Key bulunamadı. Lütfen yönetici panelinden Secrets ayarını kontrol edin.")
+        st.error("Sistem API Key bulunamadı. Lütfen Streamlit Cloud Secrets ayarından GEMINI_API_KEY ekleyin.")
     elif not ilan_linki and uploaded_file is None and not ilan_metni.strip():
-        st.warning("Lütfen analiz için bir link yapıştırın, fotoğraf yükleyin veya araç bilgisi girin.")
+        st.warning("Lütfen analiz için bir link yapıştırın, fotoğraf yükleyin veya araç bilgisi yazın.")
     else:
-        with st.spinner("🔍 Araç geçmişi, kronik sorunlar ve piyasa verileri taranıyor..."):
+        with st.spinner("⚡ Yapay Zekâ Araç Verilerini, Kronik Arıza Veritabanını ve Piyasa Koşullarını Tarıyor..."):
             try:
                 client = genai.Client(api_key=api_key)
                 contents = [SYSTEM_PROMPT]
@@ -139,15 +165,15 @@ if st.button("🚀 Aracı Detaylı Analiz Et"):
                     contents.append(image)
                     
                 if ilan_metni.strip():
-                    contents.append(f"Kullanıcı Araç Notu:\n{ilan_metni}")
+                    contents.append(f"Kullanıcı Araç Notu / Bilgisi:\n{ilan_metni}")
                 
                 response = client.models.generate_content(
                     model='gemini-3.6-flash',
                     contents=contents
                 )
                 
-                st.success("✅ Analiz Başarıyla Tamamlandı!")
-                st.markdown("---")
+                st.balloons()
+                st.success("✅ 360° Araç Ekspertiz Raporu Başarıyla Oluşturuldu!")
                 st.markdown(response.text)
             except Exception as e:
                 st.error(f"Analiz sırasında bir hata oluştu: {e}")
