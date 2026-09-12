@@ -25,7 +25,6 @@ if 'puan' not in st.session_state:
 if 'son_odul_tarihi' not in st.session_state:
     st.session_state.son_odul_tarihi = None
 
-# Hata Veren Aktarım Değişkeni (Widget Key Çakışmasını Önler)
 if 'analiz_metni_aktar' not in st.session_state:
     st.session_state.analiz_metni_aktar = ""
 
@@ -50,7 +49,7 @@ if 'pazar_ilanlari' not in st.session_state:
     ]
 
 # ---------------------------------------------------------
-# SAHİBİNDEN / LETGO TARZI NEON PAZAR YERİ CSS
+# CSS STİLLERİ
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -85,8 +84,6 @@ st.markdown("""
         text-align: center;
         box-shadow: 0 0 15px rgba(129, 140, 248, 0.3);
     }
-    
-    /* LETGO / SAHİBİNDEN İLAN KARTI STİLİ */
     .ad-card {
         background: rgba(30, 41, 59, 0.85);
         border: 1px solid #334155;
@@ -120,7 +117,6 @@ st.markdown("""
         font-size: 0.85rem;
         margin-right: 5px;
     }
-
     .report-box {
         background: rgba(15, 23, 42, 0.95);
         border: 2px solid #38bdf8;
@@ -138,11 +134,6 @@ st.markdown("""
         border: none;
         padding: 12px;
         box-shadow: 0 0 15px rgba(79, 70, 229, 0.4);
-    }
-    .stButton>button:disabled {
-        background: #334155 !important;
-        color: #94a3b8 !important;
-        border: 1px solid #475569 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -194,7 +185,7 @@ with st.sidebar:
             </div>
             """, unsafe_allow_html=True)
     st.markdown("---")
-    st.caption("AutoCheck Engine v5.1 Marketplace")
+    st.caption("AutoCheck Engine v5.2")
 
 # ---------------------------------------------------------
 # 7 ANA SEKMELİ YAPILANDIRMA
@@ -210,13 +201,12 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
 ])
 
 # ---------------------------------------------------------
-# SEKME 1: TEK ARAÇ ANALİZİ (ÇAKIŞMA OLMADAN ÇALIŞIR)
+# SEKME 1: TEK ARAÇ ANALİZİ
 # ---------------------------------------------------------
 with tab1:
     col_input1, col_input2 = st.columns(2)
     with col_input1:
         link_single = st.text_input("🔗 İlan Linki:", key="link_s")
-        # Pazar yerinden aktarılan veri varsa varsayılan olarak o gelir
         text_single = st.text_area(
             "✍️ İlan Metni / Notlar:", 
             value=st.session_state.analiz_metni_aktar, 
@@ -236,7 +226,7 @@ with tab1:
         elif not link_single and img_single is None and not text_single.strip():
             st.warning("Lütfen analiz için ilan linki, metin veya resim ekleyin.")
         else:
-            with st.spinner("Analiz ediliyor..."):
+            with st.spinner("🔍 Yapay zeka ilanı ve görselleri inceliyor, lütfen bekleyin..."):
                 try:
                     client = genai.Client(api_key=api_key)
                     prompt = "Sen oto ekspertiz uzmanısın. Bilgileri incele; 10 üzerinden puan ver, mekanik/kronik riskleri ve bakılacak 3 kritik noktayı yaz."
@@ -254,11 +244,10 @@ with tab1:
                     st.error(f"Hata oluştu: {e}")
 
 # ---------------------------------------------------------
-# SEKME 2: SATILIK İLANLAR PAZARI (SAHİBİNDEN / LETGO TARZI)
+# SEKME 2: SATILIK İLANLAR PAZARI
 # ---------------------------------------------------------
 with tab2:
     st.subheader("🛍️ İkinci El Otomobil & Motosiklet Pazarı")
-    st.caption("Kullanıcıların eklediği ilanları doğrudan inceleyin veya yapay zekâya analiz ettirin.")
     
     if not st.session_state.pazar_ilanlari:
         st.info("Henüz pazarda ilan yok. 'İlan Ver' sekmesinden ilk ilanı sen yayınla!")
@@ -289,7 +278,6 @@ with tab2:
                 st.markdown(f'<div class="price-badge">{item["fiyat"]}</div>', unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # Güvenli Aktarım Butonu (Hata Verme İhtimali Yoktur)
                 if st.button(f"🤖 AI İle Analiz Et", key=f"btn_pazar_{idx}"):
                     st.session_state.analiz_metni_aktar = f"Araç: {item['baslik']} | Fiyat: {item['fiyat']} | KM: {item['km']} | Lokasyon: {item['sehir']} | Açıklama: {item['detay']}"
                     st.toast("İlan bilgisi 1. Sekmeye yüklendi! Lütfen 'Tek Araç Analizi' sekmesine geçin.", icon="✅")
@@ -323,7 +311,7 @@ with tab3:
                 "detay": p_detay,
                 "img": uploaded_img
             }
-            st.session_state.pazar_ilanlari.insert(0, yeni_ilan) # Yeni ilanı en üste ekler
+            st.session_state.pazar_ilanlari.insert(0, yeni_ilan)
             st.session_state.puan += 150
             st.success("İlanınız başarıyla eklendi! Pazarda en üstte yayınlandı (+150 XP).")
             st.rerun()
@@ -346,11 +334,12 @@ with tab4:
     
     if st.button("⚔️ İKİ ARACI KIYASLA VE KAZANANI SEÇ", key="btn_c"):
         if api_key and (text_A or text_B or link_A or link_B):
-            client = genai.Client(api_key=api_key)
-            res_c = client.models.generate_content(model='gemini-3.6-flash', contents=[f"Şu iki aracı kıyasla ve kazananı seç:\nAraç A: {link_A} {text_A}\nAraç B: {link_B} {text_B}"])
-            st.markdown('<div class="report-box">', unsafe_allow_html=True)
-            st.markdown(res_c.text)
-            st.markdown('</div>', unsafe_allow_html=True)
+            with st.spinner("⚔️ Karşılaştırma yapılıyor..."):
+                client = genai.Client(api_key=api_key)
+                res_c = client.models.generate_content(model='gemini-3.6-flash', contents=[f"Şu iki aracı kıyasla ve kazananı seç:\nAraç A: {link_A} {text_A}\nAraç B: {link_B} {text_B}"])
+                st.markdown('<div class="report-box">', unsafe_allow_html=True)
+                st.markdown(res_c.text)
+                st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # SEKME 5: SOSYAL OYLAMA MODÜLÜ
@@ -398,22 +387,42 @@ with tab6:
             st.rerun()
 
 # ---------------------------------------------------------
-# SEKME 7: BÜTÇEYE UYGUN ARAÇ & MOTOSİKLET BULUCU
+# SEKME 7: BÜTÇEYE UYGUN ARAÇ & MOTOSİKLET BULUCU (GÜNCELLENDİ)
 # ---------------------------------------------------------
 with tab7:
     st.subheader("💰 Bütçenize En Uygun Araç/Motor Bulucu")
     col_b1, col_b2 = st.columns(2)
     with col_b1:
-        butce = st.number_input("Bütçe (TL):", value=350000, step=10000, key="b_price")
+        butce = st.number_input("Bütçe (TL):", value=600000, step=25000, key="b_price")
         vasita_turu = st.selectbox("Vasıta Türü:", ["Otomobil", "Motosiklet", "Ticari / Van"], key="b_type")
     with col_b2:
-        oncelik = st.selectbox("Öncelik:", ["Az Yaksın", "Kronik Arızasız", "İlk Araç", "Yedek Parça Ucuz"], key="b_prio")
-        ekra_not = st.text_input("Not:", key="b_note")
+        oncelik = st.selectbox("Öncelik:", ["Performans / Sürüş Keyfi", "Az Yaksın", "Kronik Arızasız", "İlk Araç", "Yedek Parça Ucuz"], key="b_prio")
+        ekra_not = st.text_input("🎯 Özel İstek / Marka Tercihi (Örn: BMW olsun, Otomatik olsun vb.):", key="b_note")
 
     if st.button("🚀 UYGUN SEÇENEKLERİ LİSTELE", key="btn_budget"):
-        if api_key:
-            client = genai.Client(api_key=api_key)
-            res_b = client.models.generate_content(model='gemini-3.6-flash', contents=[f"Bütçe: {butce} TL, Tür: {vasita_turu}, Öncelik: {oncelik}. 3 araç öner."])
-            st.markdown('<div class="report-box">', unsafe_allow_html=True)
-            st.markdown(res_b.text)
-            st.markdown('</div>', unsafe_allow_html=True)
+        if not api_key:
+            st.error("Lütfen önce API Key tanımlayın.")
+        else:
+            with st.spinner("🤖 Bütçenize ve özel isteklerinize en uygun 5 seçenek taranıyor..."):
+                try:
+                    client = genai.Client(api_key=api_key)
+                    prompt_budget = f"""
+                    Sen bir otomotiv uzmanısın. Kullanıcı aşağıdaki kriterlere göre araç listesi istiyor:
+                    - **Bütçe:** {butce} TL
+                    - **Vasıta Türü:** {vasita_turu}
+                    - **Öncelik:** {oncelik}
+                    - **KULLANICININ ÖZEL İSTEĞİ / NOTU:** "{ekra_not}" (Bu nota KESİNLİKLE UY, örneğin marka/model/vites belirtilmişse öncelikle o markaya odaklan!)
+
+                    Lütfen tam olarak 5 FARKLI ARAÇ öner. Her araç için:
+                    1. Marka - Model - Yıl aralığı
+                    2. Yaklaşık Piyasa Fiyatı ve KM aralığı
+                    3. Neden tercih edilmeli? (Artıları)
+                    4. Dikkat edilmesi gereken kronik/mekanik durumlar (Eksileri)
+                    Açık ve anlaşılır maddeler halinde listele.
+                    """
+                    res_b = client.models.generate_content(model='gemini-3.6-flash', contents=[prompt_budget])
+                    st.markdown('<div class="report-box">', unsafe_allow_html=True)
+                    st.markdown(res_b.text)
+                    st.markdown('</div>', unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"Hata oluştu: {e}")
