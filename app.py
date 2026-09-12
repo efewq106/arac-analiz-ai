@@ -261,9 +261,6 @@ with tab3:
                 st.success("İlan eklendi!")
                 st.rerun()
 
-with tar4_kontrol := st.tabs(["🤖 BÜTÇEYE GÖRE ARAÇ BUL"])[0] if False else None:
-    pass
-
 with tab4:
     st.subheader("💰 Bütçene Göre Araç / Motor Bulucu")
     butce = st.number_input("Bütçe (TL):", value=600000, step=25000)
